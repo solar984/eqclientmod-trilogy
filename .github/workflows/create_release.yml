@@ -1,0 +1,38 @@
+name: Create manual release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version_tag:
+        description: 'Unique release version (generates tag)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '[17.0,18.0)'
+          msbuild-architecture: x64
+
+      - name: Build
+        run: msbuild eqclientmod-trilogy.vcxproj /m /t:Rebuild /p:Configuration=Release /p:Platform=Win32
+
+      - name: Publish release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: out/vs2022/Release/winmm.dll
+          artifactErrorsFailBuild: true
+          commit: ${{ github.sha }}
+          tag: ${{ inputs.release_version_tag }}
+          immutableCreate: true
